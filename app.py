@@ -151,17 +151,18 @@ def fetch_weather(city_name_ru=""):
         clean_url = get_clean_url(WEATHER_URL_SPACED).replace("/?", f"/{city_name_en}?")
         response = requests.get(clean_url, timeout=5)
         data = response.json()
-        current = data["current_condition"][0]
+        current = data["current_condition"]
         temp = current["temp_C"]
 
-        desc = current.get("weatherDesc", [{"value": "Неизвестно"}])[0]["value"]
+        desc = current.get("weatherDesc", [{"value": "Неизвестно"}])["value"]
         if "lang_ru" in current and current["lang_ru"]:
-            desc = current["lang_ru"][0]["value"]
+            desc = current["lang_ru"]["value"]
 
         return f"🌤 Погода в городе *{city_name_ru}*:\n🌡 Температура: *{temp}°C*\n📝 На улице: *{desc}*"
     except Exception as e:
         print(f"Ошибка погоды: {e}")
         return "❌ Не удалось найти такой город. Проверь, правильно ли написано название!"
+
 
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
@@ -188,9 +189,9 @@ def handle_messages(message):
 
     ai_result = ""
 
-    # 🎁 СЕКРЕТНАЯ КОМАНДА НА ДЕНЬ РОЖДЕНИЯ АВТОРА
+    # 🎁 СЕКРЕТНАЯ КОМАНДА НА ДЕНЬ РОЖДЕНИЯ АВТОРА (СТРОГО 2 ИЮНЯ!)
     if "2 june" in text or "2 июня" in text:
-        ai_result = "🎉🎂🎈 *УРА-А-А-А!* Сегодня, 2 июня, День рождения у создателя этого крутого бота! *Поздравляем Автора с 9-летием!* 🥳 Пожелаем ему тонну счастья, бесконечных каникул и чтобы новенький Xbox Series S работал без багов и тащил все игры на ультрах! Напиши Никите в ЛС и поздравь его! 🎮🔥"
+        ai_result = "🎉🎂🎈 *УРА-А-А-А!* Сегодня, 2 июня, День рождения у создателя этого крутого бота! *Поздравляем Никиту с 9-летием!* 🥳 Пожелаем ему тонну счастья, бесконечных каникул и чтобы новенький Xbox Series S работал без багов и тащил все игры на ультрах! Напиши Никите в ЛС и поздравь его! 🎮🔥"
 
     # 1. Калькулятор
     if ai_result == "":
@@ -206,12 +207,32 @@ def handle_messages(message):
         now = datetime.datetime.now().strftime("%H:%M:%S")
         ai_result = f"⏰ Время на часах: *{now}*"
 
-    # 3. Погода
+    # 3. Погода (Супер-умный разбор фразы и поиск любого города!)
     if (
         ai_result == ""
         and any(word in text for word in ["погода", "погоду", "на улице"])
     ):
-        ai_result = fetch_weather()
+        chosen_city = ""
+        # Очищаем текст от всех возможных мусорных слов
+        clean_text = text
+        for trash in [
+            "погода",
+            "погоду",
+            "на улице",
+            "какая",
+            "какой",
+            "сейчас",
+            "в",
+            "на",
+            "город",
+            "городе",
+        ]:
+            clean_text = clean_text.replace(trash, "")
+
+        # Убираем лишние пробелы по краям, теперь там осталось ТОЛЬКО имя города!
+        chosen_city = clean_text.strip()
+
+        ai_result = fetch_weather(chosen_city)
 
     # 4. База знаний
     if ai_result == "":
@@ -241,29 +262,33 @@ def handle_messages(message):
     # 5. Баги и Рецепты
     if ai_result == "":
         if any(word in text for word in ["ошибка", "баг", "сломалось"]):
-            ai_result = "🛠️ Так, без паники! Проверь, все ли скобки закрыты и правильные ли кавычки стоят на Гитхабе. Твой Миртекс быстро раскатает этот баг! 💻"
-        elif any(word in text for word in ["рецепт", "приготовить", "кушать", "еда", "пицца", "блин"]):
+            ai_result = "🛠️ Не беспокойтесь, это поправимо. Рекомендую проверить закрытие всех скобок и правильность кавычек в репозитории на GitHub. Ваш код обязательно заработает!"
+        elif any(
+            word in text
+            for word in ["рецепт", "приготовить", "кушать", "еда", "пицца", "блин"]
+        ):
             if "пицца" in text or "пиццы" in text:
-                ai_result = "🍕 *Рецепт mini-пиццы:* возьми батон, намажь кетчупом, положи колбасу, сыр и запеки в микроволновке на 1 минуту!"
+                ai_result = "🍕 *Рецепт mini-пиццы:* возьмите батон, смажьте кетчупом, положите ломтик колбасу, сыр и запекайте в микроволновой печи в течение 1 минуты."
             else:
-                ai_result = "🥞 *Рецепт блинчиков:* смешай 1 яйцо, 1 стакан молока и 1 стакан муки. Добавь сахара и жарь на сковородке кружочки!"
+                ai_result = "🥞 *Рецепт классических блинчиков:* смешайте 1 яйцо, 1 стакан молока и 1 стакан муки. Добавьте немного сахара и выпекайте на разогретой сковороде."
 
-    # 6. Разговорный сленг (Сброс истории приветствий через 2 часа!)
+    # 6. Умный и вежливый собеседник (Вместо дворового сленга!)
     if ai_result == "":
         current_time = time.time()
-        
-        # Если пользователя нет в базе или прошло больше 2 часов (7200 секунд) — сбрасываем историю
-        if user_id not in user_chat_history or (current_time - user_chat_history[user_id]["last_time"]) > 7200:
+
+        if (
+            user_id not in user_chat_history
+            or (current_time - user_chat_history[user_id]["last_time"]) > 7200
+        ):
             user_chat_history[user_id] = {
                 "hello_count": 0,
-                "last_time": current_time
+                "last_time": current_time,
             }
 
         words_hello = ["привет", "привёт", "хай", "ку", "салам", "здарова", "йо"]
         is_hello = any(word in text for word in words_hello)
-        
+
         if is_hello:
-            # Увеличиваем счётчик приветствий и обновляем время контакта
             user_chat_history[user_id]["hello_count"] += 1
             user_chat_history[user_id]["last_time"] = current_time
 
@@ -275,26 +300,25 @@ def handle_messages(message):
 
         if is_status:
             ai_result = random.choice([
-                "Да вообще отлично, провода кайфуют! Как твои успехи? 🚀",
-                "Все чики-пуки, сижу на чилле, играю в Майнкрафт. Сам как? 😎",
-                "Настроение пушка! Готов разносить этот день в пух и прах. 🔥",
+                "У меня всё функционирует отлично, виртуальные системы работают на полную мощность! Как ваши успехи? 🚀",
+                "Благодарю за интерес, я нахожусь в режиме стабильной работы и готов к вычислениям. А как идут дела у вас? 💻",
+                "Настроение прекрасное! Готов помочь вам разобраться в любых научных темах и сложных вопросов. 🧠",
             ])
         elif is_hello:
             if hello_count > 1:
                 ai_result = random.choice([
-                    "Да мы ж уже перетирали за это, здоровались! 😂",
-                    "Память отшибло? Привет ещё раз! 👋",
-                    "У тебя пластинку заело? Здорова-здорова! 🤭",
-                    "Сколько можно здороваться, у меня от этого провода замыкает! ⚡🤖",
-                    "Привет! (Это уже в сотый раз, если что) 😉",
+                    "Мы с вами уже поздоровались. Рад продолжать наше интеллектуальное общение! 😊",
+                    "Приветствую вас повторно! Моя оперативная память зафиксировала наше приветствие. 👋",
                 ])
             else:
-                ai_result = "👋 Йоу! Миртекс на связи! С первым днём лета и началом каникул! Как сам, чем занимаешься? 😎"
+                ai_result = "👋 Здравствуйте! Я ваш персональный интеллектуальный ассистент Миртекс. Поздравляю вас с началом лета и долгожданных каникул! Чем могу помочь вам сегодня? ☀️"
+        elif "новости" in text or "новость" in text:
+            ai_result = "📰 *Главные новости на сегодня:* На дворе прекрасное 1 июня — первый день лета и Всемирный день защиты детей! В Кемерово стоит отличная солнечная погода, а до одного очень важного события и крутого Xbox осталось совсем чуть-чуть! ☀️🎮"
         else:
             ai_result = random.choice([
-                "Реально базаришь. Расскажи подробнее! 🔥",
-                "Жиза! У меня микросхемы от такого плавятся. 😎",
-                "Тема годная, одобряю полностью. Что дальше?",
+                "Это весьма интересная мысль. Не могли бы вы рассказать об этом подробнее? 📝",
+                "Ваше сообщение принято к сведению. Мои алгоритмы полностью согласны с этой точкой зрения! 🤖",
+                "Очень занимательная тема для обсуждения. Каков будет наш следующий шаг? 🧠",
             ])
 
     # 🛑 Удаляем анимацию загрузки перед выдачей ответа
@@ -305,26 +329,14 @@ def handle_messages(message):
 def ping_server():
     while True:
         try:
-            # 🚀 Вставь сюда свою ссылку, скопированную из Render!
-            url = "https://mirtexai-telegram.onrender.com/"
-            requests.get(url, timeout=5)
-            print("🚀 Будильник: Успешно пнул сервер Миртекса через интернет!")
-        except Exception as e:
-            print(f"🤖 Будильник: Не удалось пнуть сервер: {e}")
-        time.sleep(600)
+            requests.get("https://mirtexai-telegram.onrender.com/", timeout=300)
+        except:
+            pass
+        time.sleep(960)
 
 
 if __name__ == "__main__" and API_TOKEN:
-    # Запускаем фоновый веб-сервер для Render
-    server_thread = threading.Thread(target=run_web_server)
-    server_thread.daemon = True
-    server_thread.start()
-
-    # Запускаем наш внутренний вечный будильник!
-    ping_thread = threading.Thread(target=ping_server)
-    ping_thread.daemon = True
-    ping_thread.start()
-
-    print("🤖 Миртекс успешно запускает веб-сервер, будильник и подключается к Telegram!")
+    threading.Thread(target=run_web_server, daemon=True).start()
+    threading.Thread(target=ping_server, daemon=True).start()
+    print("🤖 Миртекс запущен!")
     bot.infinity_polling()
-
