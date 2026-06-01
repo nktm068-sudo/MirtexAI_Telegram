@@ -197,7 +197,6 @@ def handle_messages(message):
             if key in text:
                 found_topic = key
                 break
-
         if found_topic != "":
             topic_data = DATABASE[found_topic]
             correct_word = topic_data["correct_name"]
@@ -219,61 +218,58 @@ def handle_messages(message):
     if ai_result == "":
         if any(word in text for word in ["ошибка", "баг", "сломалось"]):
             ai_result = "🛠️ Так, без паники! Проверь, все ли скобки закрыты и правильные ли кавычки стоят на Гитхабе. Твой Миртекс быстро раскатает этот баг! 💻"
-        elif any(
-            word in text
-            for word in ["рецепт", "приготовить", "кушать", "еда", "пицца", "блин"]
-        ):
+        elif any(word in text for word in ["рецепт", "приготовить", "кушать", "еда", "пицца", "блин"]):
             if "пицца" in text or "пиццы" in text:
                 ai_result = "🍕 *Рецепт mini-пиццы:* возьми батон, намажь кетчупом, положи колбасу, сыр и запеки в микроволновке на 1 минуту!"
             else:
                 ai_result = "🥞 *Рецепт блинчиков:* смешай 1 яйцо, 1 стакан молока и 1 стакан муки. Добавь сахара и жарь на сковородке кружочки!"
 
-    # 6. Разговорный сленг
+    # 6. Разговорный сленг (С проверкой слова "привёт" и новыми повторами!)
     if ai_result == "":
         if user_id not in user_chat_history:
             user_chat_history[user_id] = []
         user_chat_history[user_id].append(text)
 
-        words_hello = ["привет", "хай", "ку", "салам", "здарова", "йо"]
-        hello_count = sum(
-            1
-            for t in user_chat_history[user_id]
-            if any(w in t for w in words_hello)
-        )
+        words_hello = ["привет", "привёт", "хай", "ку", "салам", "здарова", "йо"]
+        hello_count = sum(1 for t in user_chat_history[user_id] if any(w in t for w in words_hello))
 
         is_hello = any(word in text for word in words_hello)
-        is_status = any(
-            word in text
-            for word in ["как дела", "как жизнь", "че как", "как ты", "настроение", "как сам"]
-        )
+        is_status = any(word in text for word in ["как дела", "как жизнь", "че как", "как ты", "настроение", "как сам"])
 
         if is_status:
             ai_result = random.choice([
                 "Да вообще отлично, провода кайфуют! Как твои успехи? 🚀",
                 "Все чики-пуки, сижу на чилле, играю в Майнкрафт. Сам как? 😎",
-                "Настроение пушка! Готов разносить этот день в пух и прах. 🔥",
+                "Настроение пушка! Готов разносить этот день в пух и прах. 🔥"
             ])
         elif is_hello:
             if hello_count > 1:
                 ai_result = random.choice([
                     "Да мы ж уже перетирали за это, здоровались! 😂",
-                    "Память отшибло? Привет ещё раз!👋"
+                    "Память отшибло? Привет ещё раз! 👋",
+                    "У тебя пластинку заело? Здорова-здорова! 🤭",
+                    "Сколько можно здороваться, у меня от этого провода замыкает! ⚡🤖",
+                    "Привет! (Это уже в сотый раз, если что) 😉"
                 ])
             else:
                 ai_result = "👋 Йоу! Миртекс на связи! С первым днём лета и началом каникул! Как сам, чем занимаешься? 😎"
-            else:
+        else:
             ai_result = random.choice([
-        "Реально базаришь. Расскажи подробнее! 🔥",
-        "Жиза! У меня микросхемы от такого плавятся. 😎",
-        "Тема годная, одобряю полностью. Что дальше?",
-        ])
-        # 🛑 Удаляем анимацию загрузки перед выдачей ответа
-        bot.delete_message(message.chat.id, loading_msg.message_id
+                "Реально базаришь. Расскажи подробнее! 🔥",
+                "Жиза! У меня микросхемы от такого плавятся. 😎",
+                "Тема годная, одобряю полностью. Что дальше?"
+            ])
+
+    # 🛑 Удаляем анимацию загрузки перед выдачей ответа
+    bot.delete_message(message.chat.id, loading_msg.message_id)
     bot.send_message(message.chat.id, ai_result, parse_mode="Markdown")
-    if name == "main" and API_TOKEN:
+
+
+if __name__ == "__main__" and API_TOKEN:
     # Запускаем фоновый веб-сервер для Render
     server_thread = threading.Thread(target=run_web_server)
-server_thread.daemon = True
-server_thread.start()
-print("🤖 Миртекс успешно запускает веб-сервер и подключается к Telegram!")
-bot.infinity_polling()
+    server_thread.daemon = True
+    server_thread.start()
+
+    print("🤖 Миртекс успешно запускает веб-сервер и подключается к Telegram!")
+    bot.infinity_polling()
