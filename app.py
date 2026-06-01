@@ -145,7 +145,7 @@ def fetch_weather(city_name_ru=""):
             clean_translate_url = get_clean_url(TRANSLATE_URL_SPACED) + city_name_ru
             tr_response = requests.get(clean_translate_url, timeout=5)
             # Вытаскиваем чистое английское слово из ответа Google
-            city_name_en = tr_response.json()
+            city_name_en = tr_response.json()[0][0][0]
 
         # Подставляем переведённый город в ссылку погоды
         clean_url = get_clean_url(WEATHER_URL_SPACED).replace("/?", f"/{city_name_en}?")
