@@ -17,6 +17,8 @@ else:
     bot = telebot.TeleBot(API_TOKEN)
 
 WEATHER_URL_SPACED = "h t t p s : / / w t t r . i n / ? f o r m a t = j 1"
+# НОВАЯ ССЫЛКА НА ПЕРЕВОДЧИК
+TRANSLATE_URL_SPACED = "h t t p s : / / t r a n s l a t e . g o o g l e a p i s . c o m / t r a n s l a t e _ a / s i n g l e ? c l i e n t = g t x & s l = r u & t l = e n & d t = t & q ="
 
 # 🧠 ТВОЯ ПОЛНАЯ НЕЙРО-БАЗА ЗНАНИЙ
 DATABASE = {
@@ -289,11 +291,29 @@ def handle_messages(message):
     bot.send_message(message.chat.id, ai_result, parse_mode="Markdown")
 
 
+def ping_server():
+    while True:
+        try:
+            # 🚀 Вставь сюда свою ссылку, скопированную из Render!
+            url = "https://mirtexai-telegram.onrender.com/"
+            requests.get(url, timeout=5)
+            print("🚀 Будильник: Успешно пнул сервер Миртекса через интернет!")
+        except Exception as e:
+            print(f"🤖 Будильник: Не удалось пнуть сервер: {e}")
+        time.sleep(600)
+
+
 if __name__ == "__main__" and API_TOKEN:
     # Запускаем фоновый веб-сервер для Render
     server_thread = threading.Thread(target=run_web_server)
     server_thread.daemon = True
     server_thread.start()
 
-    print("🤖 Миртекс успешно запускает веб-сервер и подключается к Telegram!")
+    # Запускаем наш внутренний вечный будильник!
+    ping_thread = threading.Thread(target=ping_server)
+    ping_thread.daemon = True
+    ping_thread.start()
+
+    print("🤖 Миртекс успешно запускает веб-сервер, будильник и подключается к Telegram!")
     bot.infinity_polling()
+
