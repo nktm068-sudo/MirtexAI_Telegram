@@ -97,7 +97,6 @@ DATABASE = {
         "info": "он состоит на 95% из воды и отлично хрустит в салате.",
     },
 }
-
 user_chat_history = {}
 
 # --- НЕОБХОДИМАЯ ЧАСТЬ ДЛЯ RENDER (ВЕБ-СЕРВЕР) ---
@@ -147,7 +146,7 @@ def fetch_weather():
 
         return f"🌤 Погода в твоём городе:\n🌡 Температура: *{temp}°C*\n📝 На улице: *{desc}*"
     except Exception as e:
-         print(f"Ошибка погоды: {e}")
+        print(f"Ошибка погоды: {e}")
         return "❌ Не удалось загрузить погоду. Проверь сеть."
 
 
@@ -208,6 +207,7 @@ def handle_messages(message):
             if key in text:
                 found_topic = key
                 break
+
         if found_topic != "":
             topic_data = DATABASE[found_topic]
             correct_word = topic_data["correct_name"]
@@ -235,7 +235,7 @@ def handle_messages(message):
             else:
                 ai_result = "🥞 *Рецепт блинчиков:* смешай 1 яйцо, 1 стакан молока и 1 стакан муки. Добавь сахара и жарь на сковородке кружочки!"
 
-       # 6. Разговорный сленг (Сброс истории приветствий через 2 часа!)
+    # 6. Разговорный сленг (Сброс истории приветствий через 2 часа!)
     if ai_result == "":
         current_time = time.time()
         
