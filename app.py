@@ -133,10 +133,22 @@ def check_math(text):
             return None
     return None
 
-
-def fetch_weather():
+def fetch_weather(city_name_ru=""):
     try:
-        clean_url = get_clean_url(WEATHER_URL_SPACED)
+        # 🏙️ Если город не написан, берём по умолчанию Москву
+        if not city_name_ru:
+            city_name_ru = "Москва"
+            city_name_en = "Moscow"
+        else:
+            city_name_ru = city_name_ru.strip().capitalize()
+            # Очищаем секретную ссылку переводчика от пробелов перед запросом
+            clean_translate_url = get_clean_url(TRANSLATE_URL_SPACED) + city_name_ru
+            tr_response = requests.get(clean_translate_url, timeout=5)
+            # Вытаскиваем чистое английское слово из ответа Google
+            city_name_en = tr_response.json()
+
+        # Подставляем переведённый город в ссылку погоды
+        clean_url = get_clean_url(WEATHER_URL_SPACED).replace("/?", f"/{city_name_en}?")
         response = requests.get(clean_url, timeout=5)
         data = response.json()
         current = data["current_condition"][0]
@@ -146,11 +158,10 @@ def fetch_weather():
         if "lang_ru" in current and current["lang_ru"]:
             desc = current["lang_ru"][0]["value"]
 
-        return f"🌤 Погода в твоём городе:\n🌡 Температура: *{temp}°C*\n📝 На улице: *{desc}*"
+        return f"🌤 Погода в городе *{city_name_ru}*:\n🌡 Температура: *{temp}°C*\n📝 На улице: *{desc}*"
     except Exception as e:
         print(f"Ошибка погоды: {e}")
-        return "❌ Не удалось загрузить погоду. Проверь сеть."
-
+        return "❌ Не удалось найти такой город. Проверь, правильно ли написано название!"
 
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
